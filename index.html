@@ -1,1 +1,119 @@
-Agenda
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#203b5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mi Agenda">
+<link rel="manifest" href="manifest.json">
+<title>Mi Agenda</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#202c3a;background:#f6f2e8;--blue:#203b5c;--paper:#fffefa;--line:#e8e4dc}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:linear-gradient(180deg,#e7f0e9,#fbf7e8 65%,#f2eadc);min-height:100vh}
+header{padding:18px 16px 12px;max-width:760px;margin:auto}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border-radius:14px;background:var(--blue);display:grid;place-items:center;color:white;font-size:27px;box-shadow:0 3px 8px #203b5c35}h1{font-family:Georgia,serif;font-style:italic;font-size:27px;margin:0;color:var(--blue)}.tag{font-size:12px;color:#637080;margin-top:2px}
+.stats{display:flex;gap:8px;margin-top:14px}.stat{background:#ffffffbf;border:1px solid #dce3da;border-radius:12px;padding:9px 12px;flex:1}.stat strong{font-size:21px;color:var(--blue);display:block}.stat span{font-size:11px;color:#68727e}
+main{max-width:760px;margin:auto;padding:0 12px 22px}.toolbar{display:flex;align-items:center;gap:8px;margin:6px 0 12px}.toolbar button{padding:10px 12px}.date-label{background:#fffefa;border:1px solid #d8ded8;border-radius:10px;padding:9px;flex:1;font-weight:650;color:#27384b}button,input,select,textarea{font:inherit}button{border:1px solid #d7dedb;border-radius:10px;background:#fffefa;color:#203b5c;padding:10px 12px;font-weight:600;box-shadow:0 1px 3px #203b5c10;cursor:pointer}button.primary{background:var(--blue);color:white;border-color:var(--blue)}button.active{background:var(--blue);color:white}
+.tabs{display:flex;gap:5px;overflow:auto;margin-bottom:12px}.tabs button{flex:1;white-space:nowrap;font-size:13px;padding:10px 8px}
+.paper{background:var(--paper);border:1px solid #e5e2da;border-radius:18px;padding:14px;box-shadow:0 4px 12px #34495e0b;margin-bottom:13px}
+.paper h2{font-size:17px;margin:0 0 11px;color:#25384c}.weekstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}.daypick{padding:7px 1px;text-align:center;border-radius:9px;font-size:11px;background:#f5f4ee;border:1px solid transparent}.daypick strong{display:block;font-size:15px;margin-top:4px}.daypick.chosen{background:#dce8f6;border-color:#9eb9d9;color:#173e6a}
+.item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.tick{width:23px;height:23px;flex-shrink:0;accent-color:#25845c;margin:1px 0 0}.itembody{flex:1;min-width:0}.itemtitle{font-weight:650;overflow-wrap:anywhere}.itemtitle.done{text-decoration:line-through;color:#87918e}.meta{font-size:12px;color:#71808b;margin-top:4px}.notes{font-size:13px;margin-top:5px;white-space:pre-wrap}.tag{display:inline-block;border-radius:5px;padding:3px 6px;font-size:10px;background:#e8effa;color:#315e8d;margin-top:5px}.empty{text-align:center;padding:20px;color:#7b858d;font-size:14px}.del{padding:5px 8px;color:#8a3d35;background:#fff5f1;font-size:12px}
+label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input:not([type=checkbox]),select,textarea{width:100%;padding:11px;border:1px solid #d3d9d8;border-radius:10px;background:#fffefa;color:#202c3a}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{width:100%;margin-top:12px}.inline{display:flex;align-items:center;gap:8px}.inline input{width:20px;height:20px;accent-color:var(--blue)}.small{font-size:12px;color:#75808b;line-height:1.5}.hide{display:none!important}.footer{text-align:center;color:#7b858d;font-size:11px;padding:10px 14px 24px}
+@media(min-width:600px){main{padding:0 20px 24px}header{padding-left:22px;padding-right:22px}.paper{padding:18px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">☑</div><div><h1>Mi Agenda</h1><div class="tag">Todo en su sitio · Citas, tareas y notas</div></div></div>
+  <div class="stats"><div class="stat"><strong id="pending">0</strong><span>Pendientes</span></div><div class="stat"><strong id="completed">0</strong><span>Completadas</span></div><div class="stat"><strong id="todayCount">0</strong><span>Para este día</span></div></div>
+</header>
+<main>
+  <div class="toolbar"><button id="prevDay" aria-label="Día anterior">‹</button><div class="date-label" id="prettyDate">Mi agenda</div><button id="nextDay" aria-label="Día siguiente">›</button></div>
+  <div class="weekstrip" id="weekstrip"></div>
+  <div class="tabs"><button class="active" data-tab="day">Agenda</button><button data-tab="tasks">Tareas</button><button data-tab="notes">Notas</button><button data-tab="upcoming">Próximos</button></div>
+  <section class="paper">
+    <h2 id="listHeading">Plan del día</h2><div id="items"></div>
+    <button class="primary full" id="jumpAdd">＋ Añadir cita o tarea</button>
+  </section>
+  <section class="paper" id="addPanel">
+    <h2>Añadir a mi agenda</h2>
+    <form id="addForm">
+      <label for="kind">¿Qué quieres añadir?</label><select id="kind"><option value="Cita">Cita / evento</option><option value="Tarea">Tarea con tic</option><option value="Nota">Nota</option></select>
+      <label for="title">Título</label><input id="title" maxlength="120" placeholder="Ej. Estudiar tema 4" required>
+      <div class="row"><div><label for="date">Fecha</label><input id="date" type="date" required></div><div><label for="time">Hora</label><input id="time" type="time" value="09:00"></div></div>
+      <label for="category">Categoría</label><select id="category"><option>Personal</option><option>Familia</option><option>Trabajo</option><option>Oposiciones</option><option>Salud</option><option>Trámites</option></select>
+      <label for="notes">Detalles (opcional)</label><textarea id="notes" rows="2" maxlength="800" placeholder="Dirección, detalles o cosas que recordar"></textarea>
+      <label class="inline"><input type="checkbox" id="reminder"> Solicitar permiso para notificaciones</label>
+      <button class="primary full" type="submit">Guardar en la agenda</button>
+    </form>
+  </section>
+  <section class="paper">
+    <h2>Copia de seguridad</h2><p class="small">Los datos se guardan en este navegador y dispositivo. Exporta una copia de vez en cuando para no perderlos.</p>
+    <div class="row"><button id="exportBtn">Exportar copia</button><button id="importBtn">Importar copia</button></div><input id="importFile" class="hide" type="file" accept="application/json">
+    <label>Notificaciones</label><p class="small">Puedes solicitar permiso para notificaciones, pero esta versión no garantiza avisos cuando está cerrada. Para avisos fiables, crea también recordatorios en la app Recordatorios del iPhone.</p><button id="notifyBtn">Activar permiso de notificaciones</button><div class="small" id="notifyStatus" aria-live="polite"></div>
+  </section>
+</main>
+<div class="footer">Mi Agenda · Diseño de agenda tradicional</div>
+<script>
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12)};
+const today=()=>fmt(new Date());
+$('date').value=today();
+let selected=today(),activeTab='day',data=[];
+try{data=JSON.parse(localStorage.getItem('miAgendaItems')||'[]');if(!Array.isArray(data))data=[]}catch(e){data=[]}
+const pretty=s=>parse(s).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function save(){localStorage.setItem('miAgendaItems',JSON.stringify(data));render()}
+function renderWeek(){
+ $('prettyDate').textContent=pretty(selected).replace(/^./,c=>c.toUpperCase());
+ const d=parse(selected),monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));
+ $('weekstrip').innerHTML='';
+ for(let i=0;i<7;i++){const x=new Date(monday);x.setDate(monday.getDate()+i);const s=fmt(x),b=document.createElement('button');b.className='daypick'+(s===selected?' chosen':'');b.innerHTML=`${['LU','MA','MI','JU','VI','SA','DO'][i]}<strong>${x.getDate()}</strong>`;b.addEventListener('click',()=>{selected=s;$('date').value=s;render()});$('weekstrip').append(b)}
+}
+function render(){
+ $('pending').textContent=data.filter(x=>!x.done&&x.kind!=='Nota').length;
+ $('completed').textContent=data.filter(x=>x.done).length;
+ $('todayCount').textContent=data.filter(x=>x.date===selected).length;
+ renderWeek();
+ let list=data.filter(x=>activeTab==='upcoming'?x.date>=selected:activeTab==='tasks'?(x.kind==='Tarea'&&x.date===selected):activeTab==='notes'?(x.kind==='Nota'):x.date===selected);
+ list.sort((a,b)=>(a.date+(a.time||'00:00')).localeCompare(b.date+(b.time||'00:00')));
+ $('listHeading').textContent=activeTab==='tasks'?'Tareas del día':activeTab==='notes'?'Mis notas':activeTab==='upcoming'?'Próximos eventos':'Plan del día';
+ $('items').innerHTML='';
+ if(!list.length){$('items').innerHTML='<div class="empty">Las páginas están en blanco.<br>Añade aquí tu primera cita o tarea.</div>'}
+ list.forEach(x=>{
+  const el=document.createElement('div');el.className='item';
+  const check=document.createElement('input');check.type='checkbox';check.className='tick';check.checked=!!x.done;check.setAttribute('aria-label','Marcar como completada');check.addEventListener('change',()=>{x.done=check.checked;save()});
+  if(x.kind==='Nota')check.classList.add('hide');
+  const body=document.createElement('div');body.className='itembody';
+  const title=document.createElement('div');title.className='itemtitle'+(x.done?' done':'');title.textContent=x.title;
+  const meta=document.createElement('div');meta.className='meta';meta.textContent=`${x.kind} · ${x.date}${x.time?' · '+x.time:''}`;
+  const tag=document.createElement('span');tag.className='tag';tag.textContent=x.category;
+  body.append(title,meta,tag);
+  if(x.notes){const n=document.createElement('div');n.className='notes';n.textContent=x.notes;body.append(n)}
+  const del=document.createElement('button');del.className='del';del.textContent='×';del.title='Eliminar';del.addEventListener('click',()=>{if(confirm('¿Eliminar este elemento?')){data=data.filter(y=>y.id!==x.id);save()}});
+  el.append(check,body,del);$('items').append(el)
+ })
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));render()}));
+$('prevDay').addEventListener('click',()=>{const d=parse(selected);d.setDate(d.getDate()-1);selected=fmt(d);$('date').value=selected;render()});
+$('nextDay').addEventListener('click',()=>{const d=parse(selected);d.setDate(d.getDate()+1);selected=fmt(d);$('date').value=selected;render()});
+$('date').addEventListener('change',()=>{selected=$('date').value||today();render()});
+$('jumpAdd').addEventListener('click',()=>$('addPanel').scrollIntoView({behavior:'smooth',block:'start'}));
+$('addForm').addEventListener('submit',async e=>{
+ e.preventDefault();const kind=$('kind').value;
+ const x={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),kind,title:$('title').value.trim(),date:$('date').value||selected,time:kind==='Nota'?'':$('time').value,category:$('category').value,notes:$('notes').value.trim(),reminder:$('reminder').checked,done:false};
+ if(!x.title)return;
+ if(x.reminder&&'Notification'in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
+ data.push(x);selected=x.date;$('title').value='';$('notes').value='';$('reminder').checked=false;activeTab=kind==='Tarea'?'tasks':kind==='Nota'?'notes':'day';document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));save()
+});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mi-agenda-copia.json';a.click();URL.revokeObjectURL(a.href)});
+$('importBtn').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const v=JSON.parse(await f.text());if(!Array.isArray(v))throw Error();if(confirm('Esto sustituirá los datos actuales. ¿Continuar?')){data=v;save();alert('Copia importada correctamente')}}catch(err){alert('El archivo no es una copia válida.')}e.target.value=''});
+$('notifyBtn').addEventListener('click',async()=>{if(!('Notification'in window)){$('notifyStatus').textContent='Este navegador no permite notificaciones web.';return}try{const p=await Notification.requestPermission();$('notifyStatus').textContent=p==='granted'?'Permiso concedido. Los avisos con la web cerrada no están garantizados.':'No se han permitido las notificaciones.'}catch(e){$('notifyStatus').textContent='No se pudo solicitar el permiso en este navegador.'}});
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+render();
+</script>
+</body></html>
