@@ -22,6 +22,7 @@ main{max-width:760px;margin:auto;padding:0 12px 22px}.toolbar{display:flex;align
 .item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.tick{width:23px;height:23px;flex-shrink:0;accent-color:#25845c;margin:1px 0 0}.itembody{flex:1;min-width:0}.itemtitle{font-weight:650;overflow-wrap:anywhere}.itemtitle.done{text-decoration:line-through;color:#87918e}.meta{font-size:12px;color:#71808b;margin-top:4px}.notes{font-size:13px;margin-top:5px;white-space:pre-wrap}.tag{display:inline-block;border-radius:5px;padding:3px 6px;font-size:10px;background:#e8effa;color:#315e8d;margin-top:5px}.empty{text-align:center;padding:20px;color:#7b858d;font-size:14px}.del{padding:5px 8px;color:#8a3d35;background:#fff5f1;font-size:12px}
 label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input:not([type=checkbox]),select,textarea{width:100%;padding:11px;border:1px solid #d3d9d8;border-radius:10px;background:#fffefa;color:#202c3a}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{width:100%;margin-top:12px}.inline{display:flex;align-items:center;gap:8px}.inline input{width:20px;height:20px;accent-color:var(--blue)}.small{font-size:12px;color:#75808b;line-height:1.5}.hide{display:none!important}.footer{text-align:center;color:#7b858d;font-size:11px;padding:10px 14px 24px}
 @media(min-width:600px){main{padding:0 20px 24px}header{padding-left:22px;padding-right:22px}.paper{padding:18px}}
+#cloudPanel .status{font-size:12px;color:#526273;margin-top:8px;line-height:1.45}#cloudPanel .auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}#cloudPanel .auth-actions button{padding:10px 6px}#cloudPanel .cloud-head{display:flex;justify-content:space-between;gap:10px;align-items:center}#cloudPanel .cloud-badge{font-size:11px;border-radius:99px;background:#e8effa;color:#315e8d;padding:5px 8px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -30,6 +31,17 @@ label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input:not([
   <div class="stats"><div class="stat"><strong id="pending">0</strong><span>Pendientes</span></div><div class="stat"><strong id="completed">0</strong><span>Completadas</span></div><div class="stat"><strong id="todayCount">0</strong><span>Para este día</span></div></div>
 </header>
 <main>
+  <section class="paper" id="cloudPanel">
+    <div class="cloud-head"><h2>Sincronización privada</h2><span class="cloud-badge" id="cloudBadge">Sin iniciar sesión</span></div>
+    <p class="small">Inicia sesión con el mismo correo en tu PC y en tu iPhone para sincronizar tus citas, tareas y notas. Cada cuenta solo puede acceder a sus propios datos.</p>
+    <div id="authForm">
+      <label for="authEmail">Correo electrónico</label><input id="authEmail" type="email" autocomplete="email" placeholder="tu correo" required>
+      <label for="authPassword">Contraseña</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+      <div class="auth-actions"><button class="primary" id="signInBtn" type="button">Iniciar sesión</button><button id="signUpBtn" type="button">Crear cuenta</button></div>
+    </div>
+    <div id="signedInPanel" class="hide"><div class="small" id="signedInEmail"></div><button id="signOutBtn" type="button" style="margin-top:10px">Cerrar sesión</button></div>
+    <div class="status" id="cloudStatus" aria-live="polite">Los datos siguen guardándose en este dispositivo hasta que inicies sesión.</div>
+  </section>
   <div class="toolbar"><button id="prevDay" aria-label="Día anterior">‹</button><div class="date-label" id="prettyDate">Mi agenda</div><button id="nextDay" aria-label="Día siguiente">›</button></div>
   <div class="weekstrip" id="weekstrip"></div>
   <div class="tabs"><button class="active" data-tab="day">Agenda</button><button data-tab="tasks">Tareas</button><button data-tab="notes">Notas</button><button data-tab="upcoming">Próximos</button></div>
@@ -50,13 +62,17 @@ label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input:not([
     </form>
   </section>
   <section class="paper">
-    <h2>Copia de seguridad</h2><p class="small">Los datos se guardan en este navegador y dispositivo. Exporta una copia de vez en cuando para no perderlos.</p>
+    <h2>Copia de seguridad</h2><p class="small">Puedes exportar una copia de seguridad en cualquier momento. Con la sesión iniciada, los cambios también se sincronizan con tu cuenta en la nube.</p>
     <div class="row"><button id="exportBtn">Exportar copia</button><button id="importBtn">Importar copia</button></div><input id="importFile" class="hide" type="file" accept="application/json">
     <label>Notificaciones</label><p class="small">Puedes solicitar permiso para notificaciones, pero esta versión no garantiza avisos cuando está cerrada. Para avisos fiables, crea también recordatorios en la app Recordatorios del iPhone.</p><button id="notifyBtn">Activar permiso de notificaciones</button><div class="small" id="notifyStatus" aria-live="polite"></div>
   </section>
 </main>
 <div class="footer">Mi Agenda · Diseño de agenda tradicional</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL='https://aqtfyihhycslksubjzuu.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_r2PafYQ_lldV_gwxg1UEaA_Vr8EGofC';
+const supabaseClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -65,8 +81,24 @@ const today=()=>fmt(new Date());
 $('date').value=today();
 let selected=today(),activeTab='day',data=[];
 try{data=JSON.parse(localStorage.getItem('miAgendaItems')||'[]');if(!Array.isArray(data))data=[]}catch(e){data=[]}
+let currentUser=null,cloudReady=false,syncTimer=null,authBusy=false;
+const setCloudStatus=(msg,badge)=>{$('cloudStatus').textContent=msg;if(badge)$('cloudBadge').textContent=badge};
+function updateAuthUI(){const logged=!!currentUser;$('authForm').classList.toggle('hide',logged);$('signedInPanel').classList.toggle('hide',!logged);$('signedInEmail').textContent=logged?'Sesión iniciada como '+currentUser.email:'';$('cloudBadge').textContent=logged?(cloudReady?'Sincronización activa':'Conectando…'):'Sin iniciar sesión'}
+async function fetchCloud(){if(!currentUser)return {row:null,error:null};return await supabaseClient.from('agenda_data').select('content,updated_at').eq('user_id',currentUser.id).maybeSingle()}
+async function pushCloud(){if(!supabaseClient||!currentUser||!cloudReady)return;setCloudStatus('Guardando cambios en la nube…','Sincronizando');const {error}=await supabaseClient.from('agenda_data').upsert({user_id:currentUser.id,content:data,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){setCloudStatus('No se pudo sincronizar: '+error.message,'Error');return}setCloudStatus('Sincronizado. Tus cambios están guardados en la nube.','Sincronizado')}
+function scheduleCloudSave(){if(!currentUser||!cloudReady)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushCloud(),500)}
+async function connectAccount(user){if(!supabaseClient){setCloudStatus('No se pudo cargar el servicio de sincronización. Comprueba tu conexión.','Sin conexión');return}currentUser=user;cloudReady=false;updateAuthUI();setCloudStatus('Comprobando los datos guardados en la nube…','Conectando');const {data:rowData,error}=await fetchCloud();if(error){setCloudStatus('No se pudieron cargar los datos: '+error.message,'Error');return}
+ const cloud=rowData?.content;
+ if(Array.isArray(cloud)){
+   if(confirm('Hay una agenda guardada en la nube. Pulsa Aceptar para cargarla en este dispositivo (reemplazará los datos locales de este navegador). Pulsa Cancelar para conservar los datos locales y elegir si quieres subirlos.')){data=cloud;localStorage.setItem('miAgendaItems',JSON.stringify(data));selected=data.find(x=>x.date===selected)?.date||selected;render();cloudReady=true;updateAuthUI();setCloudStatus('Agenda de la nube cargada y sincronización activa.','Sincronizado');return}
+   if(confirm('¿Quieres sustituir la agenda de la nube por los datos locales de este dispositivo? Hazlo solo si esos datos locales son los que quieres conservar en todos tus dispositivos.')){cloudReady=true;updateAuthUI();await pushCloud();return}
+   await supabaseClient.auth.signOut();currentUser=null;cloudReady=false;updateAuthUI();setCloudStatus('No se han cambiado los datos. Inicia sesión cuando decidas qué agenda conservar.','Sin iniciar sesión');return;
+ }
+ if(data.length){if(confirm('La nube está vacía y este dispositivo tiene '+data.length+' elementos. ¿Quieres subirlos a tu cuenta para sincronizarlos con tus otros dispositivos?')){cloudReady=true;updateAuthUI();await pushCloud();return}}
+ cloudReady=true;updateAuthUI();setCloudStatus('Sincronización activa. Los cambios nuevos se guardarán en la nube.','Sincronizado');
+}
 const pretty=s=>parse(s).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-function save(){localStorage.setItem('miAgendaItems',JSON.stringify(data));render()}
+function save(){localStorage.setItem('miAgendaItems',JSON.stringify(data));render();scheduleCloudSave()}
 function renderWeek(){
  $('prettyDate').textContent=pretty(selected).replace(/^./,c=>c.toUpperCase());
  const d=parse(selected),monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));
@@ -115,5 +147,11 @@ $('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if
 $('notifyBtn').addEventListener('click',async()=>{if(!('Notification'in window)){$('notifyStatus').textContent='Este navegador no permite notificaciones web.';return}try{const p=await Notification.requestPermission();$('notifyStatus').textContent=p==='granted'?'Permiso concedido. Los avisos con la web cerrada no están garantizados.':'No se han permitido las notificaciones.'}catch(e){$('notifyStatus').textContent='No se pudo solicitar el permiso en este navegador.'}});
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();
+
+$('signInBtn').addEventListener('click',async()=>{if(authBusy)return;const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password){setCloudStatus('Escribe tu correo y contraseña.');return}authBusy=true;setCloudStatus('Iniciando sesión…');const {data:result,error}=await supabaseClient.auth.signInWithPassword({email,password});authBusy=false;if(error){setCloudStatus('No se pudo iniciar sesión: '+error.message,'Error');return}await connectAccount(result.user)});
+$('signUpBtn').addEventListener('click',async()=>{if(authBusy)return;const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){setCloudStatus('Escribe un correo válido y una contraseña de al menos 6 caracteres.');return}authBusy=true;setCloudStatus('Creando cuenta…');const {data:result,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});authBusy=false;if(error){setCloudStatus('No se pudo crear la cuenta: '+error.message,'Error');return}if(result.session&&result.user){await connectAccount(result.user)}else{setCloudStatus('Cuenta creada. Revisa tu correo y confirma el registro; después vuelve aquí e inicia sesión.','Confirma correo')}});
+$('signOutBtn').addEventListener('click',async()=>{cloudReady=false;await supabaseClient.auth.signOut();currentUser=null;updateAuthUI();setCloudStatus('Sesión cerrada. Los datos de este dispositivo se conservan localmente.','Sin iniciar sesión')});
+if(supabaseClient){supabaseClient.auth.getSession().then(({data,error})=>{if(error){setCloudStatus('No se pudo comprobar la sesión: '+error.message,'Error');return}if(data.session?.user)connectAccount(data.session.user)});supabaseClient.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){currentUser=null;cloudReady=false;updateAuthUI()}else if(event==='SIGNED_IN'&&session?.user&&!currentUser)connectAccount(session.user)})}else{setCloudStatus('No se pudo cargar la librería de sincronización. Revisa la conexión a Internet.','Sin conexión')}
+
 </script>
 </body></html>
